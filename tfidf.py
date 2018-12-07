@@ -6,7 +6,7 @@ import nltk
 #nltk.download()
 import string
 from nltk.corpus import stopwords 
-from nltk.corpus import wordnet as wn
+from nltk.corpus import wordnet 
 from nltk.stem import WordNetLemmatizer 
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
