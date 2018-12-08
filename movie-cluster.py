@@ -1,21 +1,70 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 import re
+from sklearn.cluster import MiniBatchKMeans
+import random
 
 # Filter out adult films from all_data
 all_data = pd.read_csv('movies_metadata.csv')
 all_data = all_data[all_data['adult'] == 'False']
 all_data.reset_index(drop=True, inplace=True)
 
-# Select features of interest
-feature = ['genres','id','original_language','popularity','release_date','revenue','vote_average']
-all_data.loc[:,feature]
+
+# function defining
+# function for creating list of unique items
+def unique_items(in_list):
+    unique_list = []
+    for x in in_list:
+        if x not in unique_list:
+            unique_list.append(x)
+
+    return unique_list
 
 
+def get_n_clusters(c_labels):
+    k_range = range(1, 10)
+    cluster_errors = []
 
-############ GENRE LABELING ############
+    for k in k_range:
+        clust = MiniBatchKMeans(n_clusters=k, random_state=3234)
+        clust.fit(c_labels)
+        cluster_errors.append(clust.inertia_)
+
+    # plt.figure(figsize=(12, 6))
+
+    # plt.plot(k_range, cluster_errors, marker="o", markersize=6)
+    # plt.xlabel("Number of clusters")
+    # plt.ylabel("Inertia")
+    # plt.title("Elbow Method", fontsize=14)
+    # plt.grid()
+
+    # plt.show()
+
+    min_error = np.where((cluster_errors == min(cluster_errors)))[0][0] + 1
+
+    return min_error
+
+
+def get_cluster_labels(num_clusters, labels):
+    km = MiniBatchKMeans(n_clusters=num_clusters, random_state=234523)
+
+    return km.fit(labels)
+
+
+def get_movies(in_data, num_clusters):
+    movie_titles = []
+    for i in range(num_clusters):
+        curr_list = in_data[in_data['clusters'] == i]
+        movie_titles.append([curr_list.loc[random.sample(list(curr_list.index), 1), 'original_title'].item(), i])
+    if num_clusters % 2 != 0:
+        curr_list = in_data[in_data['clusters'] == (num_clusters - 1)]
+        movie_titles.append([curr_list.loc[random.sample(list(curr_list.index), 1), 'original_title'].item(), i])
+
+    return movie_titles
+
+
+# General Setup
+# Genre Labeling
 data_genre = all_data['genres']
 
 # split multiple genre label to individuals
@@ -29,9 +78,6 @@ for i in range(len(split_genre)):
     split_genre[i].remove('[')
 
 # extract unique values for encoding
-num_items = [len(items) for items in split_genre]
-items_tot = sum(num_items)
-
 id_key = []
 genre_label = []
 curr_index = 0
@@ -46,15 +92,6 @@ for i in range(len(split_genre)):
         curr_genre.append(name.group(1))
         curr_index += 1
     genre_label.append(curr_genre)
-
-# function for creating list of unique items
-def unique_items(in_list):
-    unique_list = []
-    for x in in_list:
-        if x not in unique_list:
-            unique_list.append(x)
-
-    return unique_list
 
 # create unique list and corresponding dataframe
 unique_id = unique_items(id_key)
@@ -72,4 +109,70 @@ for i in range(len(genre_label)):
 genre_label_h = pd.DataFrame(genre_label_1h, columns=id_dict['name'])
 all_data_mod = all_data.join(genre_label_h)
 
-### USE all_data_mod FOR GENRE ENCODED DF ###
+# Join dummie variables for original language of film
+lang_1h = pd.get_dummies(all_data_mod['original_language'])
+lang_1h.rename(columns={'id': 'id_lang'}, inplace=True)
+all_data_mod = all_data_mod.join(lang_1h)
+
+# Convert datetime to type int
+all_data_mod['release_date_int'] = pd.to_datetime(all_data_mod['release_date'])
+all_data_mod['release_date_int'] = all_data_mod['release_date_int'].astype(int)
+
+# Use all_data_mod for clusterables
+
+feature = ['Drama', 'Documentary', 'Family', 'Comedy', 'Crime',
+           'Horror', 'Science Fiction', 'Action', 'Adventure',
+           'War', 'Thriller', 'Romance', 'Fantasy', 'Mystery',
+           'Western', 'Foreign', 'History', 'Music', 'Animation',
+           'TV Movie', 'ab', 'af', 'am', 'ar', 'ay', 'bg', 'bm',
+           'bn', 'bo', 'bs', 'ca', 'cn', 'cs', 'cy', 'da', 'de',
+           'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fr', 'fy',
+           'gl', 'he', 'hi', 'hr', 'hu', 'hy', 'id_lang', 'is', 'it',
+           'iu', 'ja', 'jv', 'ka', 'kk', 'kn', 'ko', 'ku', 'ky', 'la',
+           'lb', 'lo', 'lt', 'lv', 'mk', 'ml', 'mn', 'mr', 'ms', 'mt',
+           'nb', 'ne', 'nl', 'no', 'pa', 'pl', 'ps', 'pt', 'qu', 'ro',
+           'ru', 'rw', 'sh', 'si', 'sk', 'sl', 'sm', 'sq', 'sr', 'sv',
+           'ta', 'te', 'tg', 'th', 'tl', 'tr', 'uk', 'ur', 'uz', 'vi',
+           'wo', 'xx', 'zh', 'zu', 'release_date_int', "vote_average",
+           "revenue"]
+
+cluster_labels = all_data_mod.loc[:, feature]
+cluster_labels = cluster_labels.dropna()
+
+n_clusters = get_n_clusters(cluster_labels)
+clusters = get_cluster_labels(n_clusters, cluster_labels).labels_
+
+clusters_series = pd.Series(clusters, index=cluster_labels.index)
+all_data_clustered = pd.concat([all_data_mod.loc[cluster_labels.index, :], clusters_series], axis=1)
+all_data_clustered.rename(columns={0: 'clusters'}, inplace=True)
+
+# Initial set of movie output
+movie_list_1 = get_movies(all_data_clustered, n_clusters)
+
+
+# Update clusters after exhausting current list
+def process_response(return_cluster, curr_data):
+    start = True
+    for i in return_cluster:
+        if start:
+            update_data = curr_data[curr_data['clusters'] == i]
+            start = False
+        else:
+            update_data = update_data.append(curr_data[curr_data['clusters'] == i])
+
+    update_labels = update_data.loc[:, feature]
+    up_n_clusters = get_n_clusters(update_labels)
+    update_km = get_cluster_labels(up_n_clusters, update_labels)
+    update_clu = update_km.labels_
+
+    update_clusters_series = pd.Series(update_clu, index=update_labels.index)
+    update_data_clustered = pd.concat([all_data_mod.loc[update_labels.index, :], update_clusters_series], axis=1)
+    update_data_clustered.rename(columns={0: 'clusters'}, inplace=True)
+
+    movie_list_update = get_movies(update_data_clustered, up_n_clusters)
+
+    return update_data_clustered, movie_list_update
+
+
+sample_return_cluster = [0, 3, 4]
+current_set, movie_list_new = process_response(sample_return_cluster, all_data_clustered)
