@@ -73,14 +73,3 @@ print("TFIDF vector's dimension is",tfidf_matrix_overview.shape[1])
 # Feature name for vector
 words = tfidf_vectorizer.get_feature_names()
 print(words)
-
-#Dimensionality Reduction
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-
-pca = PCA(n_components = 50, random_state = 2)
-data50D = pca.fit_transform(tfidf_matrix_overview.toarray())
-X_embedded = TSNE(n_components=2, random_state = 2).fit_transform(data50D)
-X_embedded.shape
-#can use tfidf_matrix_overview for k means clustering now
-
