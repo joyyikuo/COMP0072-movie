@@ -1,12 +1,13 @@
 import pandas as pd
 import numpy as np
 import re
-from sklearn.cluster import MiniBatchKMeans
+# from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import KMeans
+
 import random
 
 import math
 from sklearn.neighbors import NearestNeighbors
-
 
 feature = ['Drama', 'Documentary', 'Family', 'Comedy', 'Crime',
            'Horror', 'Science Fiction', 'Action', 'Adventure',
@@ -46,7 +47,7 @@ def get_n_clusters(c_labels):
     cluster_errors = []
 
     for k in k_range:
-        clust = MiniBatchKMeans(n_clusters=k, random_state=3234)
+        clust = KMeans(n_clusters=k, random_state=3234)
         clust.fit(c_labels)
         cluster_errors.append(clust.inertia_)
 
@@ -56,7 +57,7 @@ def get_n_clusters(c_labels):
 
 
 def get_cluster_labels(num_clusters, labels):
-    km = MiniBatchKMeans(n_clusters=num_clusters, random_state=234523)
+    km = KMeans(n_clusters=num_clusters, random_state=234523)
 
     return km.fit(labels)
 
@@ -73,87 +74,86 @@ def get_movies(in_data, cluster_n):
 
     return movie_titles
 
+
 def get_data():
-	# General Setup
-	# Genre Labeling
-	data_genre = all_data['genres']
+    # General Setup
+    # Genre Labeling
+    data_genre = all_data['genres']
 
-	# split multiple genre label to individuals
-	split_genre = []
-	for i in data_genre.index:
-	    if data_genre[i] != '[]':
-	        split_genre.append(re.split('{', data_genre[i]))
+    # split multiple genre label to individuals
+    split_genre = []
+    for i in data_genre.index:
+        if data_genre[i] != '[]':
+            split_genre.append(re.split('{', data_genre[i]))
 
-	# remove unnecessary items from list
-	for i in range(len(split_genre)):
-	    split_genre[i].remove('[')
+    # remove unnecessary items from list
+    for i in range(len(split_genre)):
+        split_genre[i].remove('[')
 
-	# extract unique values for encoding
-	id_key = []
-	genre_label = []
-	curr_index = 0
+    # extract unique values for encoding
+    id_key = []
+    genre_label = []
+    curr_index = 0
 
-	for i in range(len(split_genre)):
-	    curr_genre = []
-	    for j in range(len(split_genre[i])):
-	        _id = re.search('\'id\': (.+?),', split_genre[i][j])
-	        name = re.search('\'name\': \'(.+?)\'}', split_genre[i][j])
+    for i in range(len(split_genre)):
+        curr_genre = []
+        for j in range(len(split_genre[i])):
+            _id = re.search('\'id\': (.+?),', split_genre[i][j])
+            name = re.search('\'name\': \'(.+?)\'}', split_genre[i][j])
 
-	        id_key.append([_id.group(1), name.group(1)])
-	        curr_genre.append(name.group(1))
-	        curr_index += 1
-	    genre_label.append(curr_genre)
+            id_key.append([_id.group(1), name.group(1)])
+            curr_genre.append(name.group(1))
+            curr_index += 1
+        genre_label.append(curr_genre)
 
-	# create unique list and corresponding dataframe
-	unique_id = unique_items(id_key)
-	id_dict = pd.DataFrame(unique_id, columns=['id', 'name'])
+    # create unique list and corresponding dataframe
+    unique_id = unique_items(id_key)
+    id_dict = pd.DataFrame(unique_id, columns=['id', 'name'])
 
-	genre_label_1h = np.zeros([len(genre_label), len(unique_id)])
+    genre_label_1h = np.zeros([len(genre_label), len(unique_id)])
 
-	# create array with movies as rows and genre types as col, encoding cols with genre listed as 1
-	for i in range(len(genre_label)):
-	    for j in range(len(unique_id)):
-	        if any(unique_id[j][1] in x for x in genre_label[i]):
-	            genre_label_1h[i][j] = 1
+    # create array with movies as rows and genre types as col, encoding cols with genre listed as 1
+    for i in range(len(genre_label)):
+        for j in range(len(unique_id)):
+            if any(unique_id[j][1] in x for x in genre_label[i]):
+                genre_label_1h[i][j] = 1
 
-	# save joined df as all_data_mod
-	genre_label_h = pd.DataFrame(genre_label_1h, columns=id_dict['name'])
-	all_data_mod = all_data.join(genre_label_h)
+    # save joined df as all_data_mod
+    genre_label_h = pd.DataFrame(genre_label_1h, columns=id_dict['name'])
+    all_data_mod = all_data.join(genre_label_h)
 
-	# Join dummie variables for original language of film
-	lang_1h = pd.get_dummies(all_data_mod['original_language'])
-	lang_1h.rename(columns={'id': 'id_lang'}, inplace=True)
-	all_data_mod = all_data_mod.join(lang_1h)
+    # Join dummie variables for original language of film
+    lang_1h = pd.get_dummies(all_data_mod['original_language'])
+    lang_1h.rename(columns={'id': 'id_lang'}, inplace=True)
+    all_data_mod = all_data_mod.join(lang_1h)
 
-	# Convert datetime to type int
-	#all_data_mod['release_date_int'] = pd.to_datetime(all_data_mod['release_date'])
-	all_data_mod['release_date_int']=all_data_mod['release_date'].str.split('-').str[0]
-	all_data_mod['release_date_int']=all_data_mod['release_date_int'].fillna(0)
-	all_data_mod['release_date_int']=all_data_mod['release_date_int'].astype('int64')
-	all_data_mod['release_date_int'] = all_data_mod['release_date_int'].astype(float)
+    # Convert datetime to type int
+    # all_data_mod['release_date_int'] = pd.to_datetime(all_data_mod['release_date'])
+    all_data_mod['release_date_int'] = all_data_mod['release_date'].str.split('-').str[0]
+    all_data_mod['release_date_int'] = all_data_mod['release_date_int'].fillna(0)
+    all_data_mod['release_date_int'] = all_data_mod['release_date_int'].astype('int64')
+    all_data_mod['release_date_int'] = all_data_mod['release_date_int'].astype(float)
 
-# Use all_data_mod for clusterables
+    # Use all_data_mod for clusterables
 
+    cluster_labels = all_data_mod.loc[:, feature]
+    cluster_labels = cluster_labels.dropna()
 
+    n_clusters = get_n_clusters(cluster_labels)
 
-	cluster_labels = all_data_mod.loc[:, feature]
-	cluster_labels = cluster_labels.dropna()
+    # temp n_clusters, should use n_clusters after refining k-optimisation
+    n_cluster_temp = 4
+    clusters = get_cluster_labels(n_cluster_temp, cluster_labels).labels_
 
-	n_clusters = get_n_clusters(cluster_labels)
+    clusters_series = pd.Series(clusters, index=cluster_labels.index)
+    all_data_clustered = pd.concat([all_data_mod.loc[cluster_labels.index, :], clusters_series], axis=1)
+    all_data_clustered.rename(columns={0: 'clusters'}, inplace=True)
 
-	#temp n_clusters, should use n_clusters after refining k-optimisation
-	n_cluster_temp = 4
-	clusters = get_cluster_labels(n_cluster_temp, cluster_labels).labels_
+    # Initial set of movie output
+    input_cluster = range(n_clusters + 1)
+    movie_list_1 = get_movies(all_data_clustered, input_cluster)
 
-	clusters_series = pd.Series(clusters, index=cluster_labels.index)
-	all_data_clustered = pd.concat([all_data_mod.loc[cluster_labels.index, :], clusters_series], axis=1)
-	all_data_clustered.rename(columns={0: 'clusters'}, inplace=True)
-
-	# Initial set of movie output
-	input_cluster = range(n_clusters+1)
-	movie_list_1 = get_movies(all_data_clustered, input_cluster)
-
-	return movie_list_1, all_data_clustered, all_data_mod
+    return movie_list_1, all_data_clustered, all_data_mod
 
 
 # Update clusters after exhausting current list
@@ -180,6 +180,7 @@ def process_response_recluster(return_cluster, curr_data, all_data_mod):
 
     return update_data_clustered, movie_list_update
 
+
 # Iterate to get more movies from the selected clusters
 def process_response_iterate(curr_data, return_movie):
     return_cluster = return_movie[:, 1].astype(int)
@@ -198,7 +199,7 @@ def get_knn(chosen_movie, k, all_data_clustered):
         cluster_df = all_data_clustered.loc[all_data_clustered['clusters'] == movie_details[1], :]
         cluster_df = cluster_df.reset_index(drop=True)
 
-        k = k+1  # use k+1 as original title will be included in k as well
+        k = k + 1  # use k+1 as original title will be included in k as well
         nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(filtered_df)
         distances, indices = nbrs.kneighbors(filtered_df)
 
@@ -206,17 +207,14 @@ def get_knn(chosen_movie, k, all_data_clustered):
 
         get_indices = indices[get_item][0]
 
-        for j in range(1, len(cluster_df.loc[get_indices,'original_title'])):
+        for j in range(1, len(cluster_df.loc[get_indices, 'original_title'])):
             recommendation.append([cluster_df.loc[get_indices[j], 'original_title'], movie_details[1]])
 
     return recommendation
 
+# sample_return_movies = np.array([['Heartbeeps', 0], ['Planet of the Apes', 2]])
+# sample_return_movies_2 = np.array([['Jungle Cat', 0], ['Arrival', 2]])
 
-#sample_return_movies = np.array([['Heartbeeps', 0], ['Planet of the Apes', 2]])
-#sample_return_movies_2 = np.array([['Jungle Cat', 0], ['Arrival', 2]])
-
-#movie_list_1, all_data_clustered, all_data_mod = get_data()
-#movie_list_new = process_response_iterate(all_data_clustered, sample_return_movies)
-#recommendation_fin = get_knn(sample_return_movies_2, 2, all_data_clustered)
-
-	
+# movie_list_1, all_data_clustered, all_data_mod = get_data()
+# movie_list_new = process_response_iterate(all_data_clustered, sample_return_movies)
+# recommendation_fin = get_knn(sample_return_movies_2, 2, all_data_clustered)
