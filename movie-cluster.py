@@ -159,6 +159,7 @@ movie_list_1 = get_movies(all_data_clustered, input_cluster)
 
 
 # Update clusters after exhausting current list
+# Will not be using this
 def process_response_recluster(return_cluster, curr_data):
     start = True
     for i in return_cluster:
@@ -181,7 +182,7 @@ def process_response_recluster(return_cluster, curr_data):
 
     return update_data_clustered, movie_list_update
 
-
+# Iterate to get more movies from the selected clusters
 def process_response_iterate(curr_data, return_movie):
     return_cluster = return_movie[:, 1].astype(int)
     movie_list_update = get_movies(curr_data, return_cluster)
@@ -189,7 +190,8 @@ def process_response_iterate(curr_data, return_movie):
     return movie_list_update
 
 
-def get_knn(chosen_movie):
+# Get knn of chosen movies
+def get_knn(chosen_movie, k):
     recommendation = []
 
     for i in range(len(chosen_movie)):
@@ -198,7 +200,8 @@ def get_knn(chosen_movie):
         cluster_df = all_data_clustered.loc[all_data_clustered['clusters'] == movie_details[1], :]
         cluster_df = cluster_df.reset_index(drop=True)
 
-        nbrs = NearestNeighbors(n_neighbors=3, algorithm='ball_tree').fit(filtered_df)
+        k = k+1  # use k+1 as original title will be included in k as well
+        nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(filtered_df)
         distances, indices = nbrs.kneighbors(filtered_df)
 
         get_item = cluster_df.loc[cluster_df['original_title'] == movie_details[0]].index
@@ -214,7 +217,7 @@ sample_return_movies = np.array([['Heartbeeps', 0], ['Planet of the Apes', 2]])
 sample_return_movies_2 = np.array([['The Last House on Dead End Street', 2], ['Planet of the Apes', 2]])
 
 movie_list_new = process_response_iterate(all_data_clustered, sample_return_movies)
-recommendation_fin = get_knn(sample_return_movies_2)
+recommendation_fin = get_knn(sample_return_movies_2, 2)
 
 print(movie_list_1)
 print(movie_list_new)
