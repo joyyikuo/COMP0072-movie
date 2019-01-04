@@ -4,6 +4,21 @@ from bs4 import BeautifulSoup
 import json
 import pandas as pd
 import ast
+from sklearn.decomposition import PCA
+import numpy as np
+import pandas as pd
+import json
+import ast
+import nltk
+#nltk.download()
+import string
+from nltk.corpus import stopwords 
+from nltk.corpus import wordnet 
+from nltk.stem import WordNetLemmatizer 
+from sklearn.feature_extraction.text import TfidfVectorizer
+import re
+from sklearn.decomposition import PCA
+
 # Filter out adult films from all_data
 all_data = pd.read_csv('movies_metadata.csv')
 all_data = all_data[all_data['adult'] == 'False']
@@ -74,6 +89,68 @@ for i in range(rows):
         pass
     #print(i)
 #12000 null value in content rating, so not included 
+
+
+#get tfidf matrix from overview
+#Simple encoding 
+all_data['overview']=all_data['overview'].astype('str')
+
+#text normalisation, tokenisation, and filtering
+def Text_Processing(text):
+    #lower case
+    text=text.lower()
+    #remove punctuation
+    text = text.translate(str.maketrans('','',string.punctuation))
+    text = text.translate(str.maketrans('','','1234567890'))
+    text = re.sub("[^a-zA-Z]+", " ", text)
+    #tokenisation
+    tokens = nltk.word_tokenize(text)
+    #stop words
+    stop_list = set(stopwords.words('english')) 
+    filtered_tokens=[word for word in tokens if word not in stop_list]
+    #lemmatisation
+    wnl = WordNetLemmatizer()
+    def get_wordnet_pos(treebank_tag):
+        if treebank_tag.startswith('J'):
+            return wordnet.ADJ
+        elif treebank_tag.startswith('V'):
+            return wordnet.VERB
+        elif treebank_tag.startswith('N'):
+            return wordnet.NOUN
+        elif treebank_tag.startswith('R'):
+            return wordnet.ADV
+        else:
+            return wordnet.NOUN    
+    def lemmatize_with_pos(token):
+        pos = nltk.pos_tag(token)
+        lemm_words = [wnl.lemmatize(word[0], get_wordnet_pos(word[1])) for word in pos]
+        return lemm_words
+    final_token=lemmatize_with_pos(filtered_tokens)
+    #def stemming(token):
+        #sno = nltk.stem.SnowballStemmer('english')
+        #stem_words = [sno.stem(word) for word in lemma_token]
+        #return stem_words
+    return final_token
+#TFIDF Vectorization
+#Define the vectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidf_vectorizer = TfidfVectorizer(max_df = 0.99,min_df = 0.01,tokenizer = Text_Processing)
+#Fitting
+tfidf_matrix_overview = tfidf_vectorizer.fit_transform(all_data["overview"])
+#print("TFIDF vector's dimension is",tfidf_matrix_overview.shape[1])
+# Feature name for vector
+words = tfidf_vectorizer.get_feature_names()
+#print(words)
+#dimensionality reduction
+pca = PCA(n_components = 20, random_state = 2)
+data20D = pca.fit_transform(tfidf_matrix_overview.toarray())
+#print(data20D.shape)
+#create overview dataframe and merge with the main dataset
+tfidf = pd.DataFrame(data=data20D)
+tfidf['id']=all_data['id']
+tfidf.columns = ['overview_0', 'overview_1','overview_2','overview_3','overview_4','overview_5','overview_6','overview_7','overview_8','overview_9','overview_10','overview_11','overview_12','overview_13','overview_14','overview_15','overview_16','overview_17','overview_18','overview_19','id']
+all_data=pd.merge(all_data,tfidf,on='id')
+
 #export extra features to csv
-extra_features=df_all.filter(['id','main_cast_id','director_code'], axis=1)
-extra_features.to_csv("extra_features",sep=',')
+extra_features=all_data.filter(['id','main_cast_id','director_code','overview_0', 'overview_1','overview_2','overview_3','overview_4','overview_5','overview_6','overview_7','overview_8','overview_9','overview_10','overview_11','overview_12','overview_13','overview_14','overview_15','overview_16','overview_17','overview_18','overview_19'], axis=1)
+extra_features.to_csv("extra_features_updated",sep=',')
