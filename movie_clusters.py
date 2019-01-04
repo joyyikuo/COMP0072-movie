@@ -23,7 +23,12 @@ feature = ['Drama', 'Documentary', 'Family', 'Comedy', 'Crime',
            'ru', 'rw', 'sh', 'si', 'sk', 'sl', 'sm', 'sq', 'sr', 'sv',
            'ta', 'te', 'tg', 'th', 'tl', 'tr', 'uk', 'ur', 'uz', 'vi',
            'wo', 'xx', 'zh', 'zu', 'release_date_int', "vote_average",
-           "revenue"]
+           "revenue",'main_cast_id','director_code','overview_0', 
+           'overview_1','overview_2','overview_3','overview_4',
+           'overview_5','overview_6','overview_7','overview_8',
+           'overview_9','overview_10','overview_11','overview_12',
+           'overview_13','overview_14','overview_15','overview_16',
+           'overview_17','overview_18','overview_19']
 
 # Filter out adult films from all_data
 all_data_mod = pd.read_csv("updated_movies_metadata.csv")
