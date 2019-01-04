@@ -11,7 +11,8 @@ from sklearn.neighbors import NearestNeighbors
 all_data = pd.read_csv('movies_metadata.csv')
 all_data = all_data[all_data['adult'] == 'False']
 all_data.reset_index(drop=True, inplace=True)
-
+extra_features=pd.read_csv('extra_features_updated.csv')
+all_data=pd.merge(all_data,extra_features,on='id')
 
 # function defining
 # function for creating list of unique items
@@ -138,7 +139,12 @@ feature = ['Drama', 'Documentary', 'Family', 'Comedy', 'Crime',
            'ru', 'rw', 'sh', 'si', 'sk', 'sl', 'sm', 'sq', 'sr', 'sv',
            'ta', 'te', 'tg', 'th', 'tl', 'tr', 'uk', 'ur', 'uz', 'vi',
            'wo', 'xx', 'zh', 'zu', 'release_date_int', "vote_average",
-           "revenue"]
+           "revenue",'main_cast_id','director_code','overview_0', 
+           'overview_1','overview_2','overview_3','overview_4',
+           'overview_5','overview_6','overview_7','overview_8',
+           'overview_9','overview_10','overview_11','overview_12',
+           'overview_13','overview_14','overview_15','overview_16',
+           'overview_17','overview_18','overview_19']
 
 cluster_labels = all_data_mod.loc[:, feature]
 cluster_labels = cluster_labels.dropna()
