@@ -31,7 +31,6 @@ feature = ['Drama', 'Documentary', 'Family', 'Comedy', 'Crime',
            'overview_17','overview_18','overview_19']
 
 # Filter out adult films from all_data
-all_data_mod = pd.read_csv("updated_movies_metadata.csv")
 all_data_clustered = pd.read_csv("all_data_clustered.csv")
 
 
@@ -76,32 +75,6 @@ def get_data():
 
     return movie_list_1
 
-
-# Update clusters after exhausting current list
-# Will not be using this
-def process_response_recluster(return_cluster, curr_data, all_data_mod):
-    start = True
-    for i in return_cluster:
-        if start:
-            update_data = curr_data[curr_data['clusters'] == i]
-            start = False
-        else:
-            update_data = update_data.append(curr_data[curr_data['clusters'] == i])
-
-    update_labels = update_data.loc[:, feature]
-    up_n_clusters = get_n_clusters(update_labels)
-    update_km = get_cluster_labels(up_n_clusters, update_labels)
-    update_clu = update_km.labels_
-
-    update_clusters_series = pd.Series(update_clu, index=update_labels.index)
-    update_data_clustered = pd.concat([all_data_mod.loc[update_labels.index, :], update_clusters_series], axis=1)
-    update_data_clustered.rename(columns={0: 'clusters'}, inplace=True)
-
-    movie_list_update = get_movies(update_data_clustered, up_n_clusters)
-
-    return update_data_clustered, movie_list_update
-
-
 # Iterate to get more movies from the selected clusters
 def process_response_iterate(curr_data, return_movie):
     return_cluster = return_movie[:, 1].astype(int)
@@ -133,11 +106,13 @@ def get_knn(chosen_movie, k):
 
     return recommendation
 
-sample_return_movies = np.array([['Heartbeeps', 0], ['Toy Story', 2]])
-sample_return_movies_2 = np.array([['Dracula: Dead and Loving It', 0], ['Pocahontas', 2]])
 
-movie_list_1 = get_data()
-print(movie_list_1)
-movie_list_new = process_response_iterate(all_data_clustered, sample_return_movies)
-recommendation_fin = get_knn(sample_return_movies_2, 2)
-print(recommendation_fin)
+'''TO TEST UNCOMMENT THE BELOW CODE'''
+#sample_return_movies = np.array([['Heartbeeps', 0], ['Toy Story', 2]])
+#sample_return_movies_2 = np.array([['Dracula: Dead and Loving It', 0], ['Pocahontas', 3]])
+
+#movie_list_1 = get_data()
+#print(movie_list_1)
+#movie_list_new = process_response_iterate(all_data_clustered, sample_return_movies)
+#recommendation_fin = get_knn(sample_return_movies_2, 2)
+#print(recommendation_fin)
