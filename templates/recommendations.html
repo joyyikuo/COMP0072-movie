@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>  
+<title>Movie Recommender</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+
+body,h1,h2,h3,h4,h5,h6 {font-family: "Raleway", sans-serif}
+</style>
+
+<body class="w3-light-grey w3-content" style="max-width:1600px">
+  <div class="w3-bar" id="myNavbar">
+    <a class="w3-bar-item w3-button w3-hover-black w3-hide-medium w3-hide-large w3-right" href="javascript:void(0);" onclick="toggleFunction()" title="Toggle Navigation Menu">
+      <i class="fa fa-bars"></i>
+    </a>
+    <a href="..#home" class="w3-bar-item w3-button">HOME</a>
+    <a href="..#about" class="w3-bar-item w3-button w3-hide-small"><i class="fa fa-user"></i> ABOUT</a>
+    <a href="..#portfolio" class="w3-bar-item w3-button w3-hide-small"><i class="fa fa-th"></i> GET RECOMMENDATION</a>
+    <a href="..#contact" class="w3-bar-item w3-button w3-hide-small"><i class="fa fa-envelope"></i> YOUR RECOMMENDATION </a>
+
+    <a href="#" class="w3-bar-item w3-button w3-hide-small w3-right w3-hover-red">
+      <i class="fa fa-search"></i>
+    </a>
+  </div>	
+
+	<div class="w3-container">
+	    <a href="#" onclick="w3_close()" class="w3-hide-large w3-right w3-jumbo w3-padding w3-hover-grey" title="close menu">
+	      <i class="fa fa-remove"></i>
+	    </a>
+	    <h4><b>MOVIE RECOMMENDER</b></h4>
+	</div>
+
+    <div class="movie-deets">
+      <div class="choice" id="left-c">
+        <h4 class="mov-name" id="mov-name-1"></h4>
+        <div class="video-embed" align=center>
+          <!-- video 1-->
+          
+          <iframe id="ytube1" frameborder="0" width="400" height="360" src=""></iframe>
+
+          <script>
+              document.getElementById("ytube1").src = "{{ mov_name_1 }}";
+              document.getElementById("mov-name-1").innerHTML = "Select a movie: {{ name_1 }} vs {{ name_2 }}";
+          </script>
+
+          <!-- video 2-->
+          <iframe id="ytube2" frameborder="0" width="400" height="360" src=""></iframe>
+          <script>
+              document.getElementById("ytube2").src = "{{ mov_name_2 }}";
+          </script>
+        </div>
+        <form action="/recommendations/", method = 'POST'>
+        <div align=center>
+          <button class="w3-button w3-black w3-margin-bottom" name="opt_1"><i class="fa fa-paper-plane w3-margin-right"></i>Option 1</button>
+          <button class="w3-button w3-black w3-margin-bottom" name="opt_2"><i class="fa fa-paper-plane w3-margin-right"></i>Option 2</button>
+        </div>
+        </form>
+      </div>
+    </div>
+
+</body>
+</html>
