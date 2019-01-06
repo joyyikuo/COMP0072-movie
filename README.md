@@ -1,5 +1,7 @@
 # COMP0072-movie
+
 COMP0072 Movie Recommendation Project (18-19)
+
 Team Members: Yiran Du, Petros Hadjikkos, Yi Kuo, Durga Ravindra, Dimitris Samouil
 
 
